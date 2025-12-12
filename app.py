@@ -1,6 +1,10 @@
 from flask import Flask, request, jsonify, make_response
 from flask_mysqldb import MySQL
 from dicttoxml import dicttoxml
+from functools import wraps
+import jwt
+import datetime
+from dicttoxml import dicttoxml
 
 
 
@@ -20,6 +24,43 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'  # Returns results as dictionarie
 
 # Initialize MySQL connection
 mysql = MySQL(app)
+
+
+# JWT Token Validation Decorator
+def token_required(f):
+   
+    @wraps(f)  # Preserves original function metadata
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+
+        if not token:
+            return jsonify({'message': 'Token is missing!'}), 401
+        
+        try:
+            # Remove 'Bearer ' prefix if present
+            # Authorization header format: "Bearer eyJhbGc..."
+            if token.startswith('Bearer '):
+                token = token[7:]  # Remove first 7 characters
+            
+            # Decode and validate the token
+            data = jwt.decode(
+                token, 
+                app.config['SECRET_KEY'],  
+                algorithms=['HS256']       
+            )
+         
+            #exceptions handling for expired and invalid tokens
+        except jwt.ExpiredSignatureError:
+           
+            return jsonify({'message': 'Token has expired!'}), 401
+            
+        except jwt.InvalidTokenError:
+           
+            return jsonify({'message': 'Token is invalid!'}), 401
+       
+        return f(*args, **kwargs)
+    
+    return decorated
 
 # Format Response Helper Function
 def format_response(data, status_code=200):
