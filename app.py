@@ -110,6 +110,8 @@ def login():
 
 # ==================== HEROES CRUD ====================
 
+
+#CREATE NEW HERO
 @app.route('/api/heroes', methods=['POST'])
 @token_required
 def create_hero():
@@ -152,13 +154,102 @@ def create_hero():
 
 
 
+    
+
+
+
+#RETRIEVE ALL HEROES
+@app.route('/api/heroes', methods=['GET'])
+@token_required
+def get_heroes():
+    """Get all heroes with their details (JOIN with roles, stats, specialty)"""
+    try:
+        cur = mysql.connection.cursor()
+        
+        query = """
+            SELECT 
+                h.idHEROES,
+                h.hero_name,
+                h.origin,
+                h.difficulty,
+                r.role_name,
+                r.description as role_description,
+                s.specialty_name,
+                hs.hp,
+                hs.mana,
+                hs.attack,
+                hs.defense,
+                hs.movement_speed
+            FROM heroes h
+            LEFT JOIN roles r ON h.ROLES_idROLES = r.idROLES
+            LEFT JOIN specialty s ON h.SPECIALTY_idSPECIALTY = s.idSPECIALTY
+            LEFT JOIN hero_stats hs ON h.HERO_STATS_idHERO_STATS = hs.idHERO_STATS
+        """
+        
+        cur.execute(query)
+        heroes = cur.fetchall()
+        cur.close()
+        
+        return format_response({
+            'heroes': heroes,
+            'count': len(heroes)
+        })
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)
+
+
+
+
+#RETRIVE SINGLE HERO BY ID
+@app.route('/api/heroes/<int:hero_id>', methods=['GET'])
+@token_required
+def get_hero(hero_id):
+    """Get a single hero by ID with full details"""
+    try:
+        cur = mysql.connection.cursor()
+        
+        query = """
+            SELECT 
+                h.idHEROES,
+                h.hero_name,
+                h.origin,
+                h.difficulty,
+                r.role_name,
+                r.description as role_description,
+                s.specialty_name,
+                hs.hp,
+                hs.mana,
+                hs.attack,
+                hs.defense,
+                hs.movement_speed
+            FROM heroes h
+            LEFT JOIN roles r ON h.ROLES_idROLES = r.idROLES
+            LEFT JOIN specialty s ON h.SPECIALTY_idSPECIALTY = s.idSPECIALTY
+            LEFT JOIN hero_stats hs ON h.HERO_STATS_idHERO_STATS = hs.idHERO_STATS
+            WHERE h.idHEROES = %s
+        """
+        
+        cur.execute(query, (hero_id,))
+        hero = cur.fetchone()
+        cur.close()
+        
+        if not hero:
+            return format_response({'error': 'Hero not found'}, 404)
+        
+        return format_response({'hero': hero})
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)
+    
+
+
+
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return {'status': 'healthy'}, 200
 
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
-    
-
-
-
