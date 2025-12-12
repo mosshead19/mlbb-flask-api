@@ -107,6 +107,51 @@ def login():
  
     return jsonify({'message': 'Invalid credentials'}), 401
 
+
+# ==================== HEROES CRUD ====================
+
+@app.route('/api/heroes', methods=['POST'])
+@token_required
+def create_hero():
+    """Create a new hero"""
+    try:
+        data = request.get_json()
+        
+        # Validate required fields
+        if not data or not data.get('hero_name'):
+            return format_response({'error': 'Hero name is required'}, 400)
+        
+        cur = mysql.connection.cursor()
+        
+        query = """
+            INSERT INTO heroes (hero_name, origin, difficulty, ROLES_idROLES, 
+                              HERO_STATS_idHERO_STATS, SPECIALTY_idSPECIALTY) 
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        
+        cur.execute(query, (
+            data.get('hero_name'),
+            data.get('origin', ''),
+            data.get('difficulty', ''),
+            data.get('role_id'),
+            data.get('hero_stats_id'),
+            data.get('specialty_id')
+        ))
+        
+        mysql.connection.commit()
+        hero_id = cur.lastrowid
+        cur.close()
+        
+        return format_response({
+            'message': 'Hero created successfully',
+            'id': hero_id
+        }, 201)
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)
+
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return {'status': 'healthy'}, 200
