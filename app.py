@@ -81,4 +81,39 @@ def format_response(data, status_code=200):
     
 
 
+@app.route('/api/login', methods=['POST'])
+def login():
+
+    auth = request.get_json()
+    
+    # Validate that username and password are provided
+    if not auth or not auth.get('username') or not auth.get('password'):
+        return jsonify({'message': 'Username and password required'}), 400
+    
+    # Check credentials
+    # NOTE: This is a simple hardcoded check for demonstration
+  
+    if auth['username'] == 'admin' and auth['password'] == 'password':
+        
+        # Create JWT token
+        token = jwt.encode({
+            'user': auth['username'],  # Username stored in token
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+            # exp = expiration time (24 hours from now)
+        }, app.config['SECRET_KEY'], algorithm='HS256')
+        
+        return jsonify({'token': token}), 200
+    
+ 
+    return jsonify({'message': 'Invalid credentials'}), 401
+
+@app.route('/api/health', methods=['GET'])
+def health_check():
+    return {'status': 'healthy'}, 200
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
+    
+
+
 
