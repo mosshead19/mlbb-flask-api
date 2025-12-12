@@ -1,4 +1,8 @@
-from flask import Flask
+from flask import Flask, request, jsonify, make_response
+from flask_mysqldb import MySQL
+from dicttoxml import dicttoxml
+
+
 
 app = Flask(__name__)
 
@@ -17,11 +21,23 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'  # Returns results as dictionarie
 # Initialize MySQL connection
 mysql = MySQL(app)
 
+# Format Response Helper Function
+def format_response(data, status_code=200):
+    
+    # Get the 'format' parameter from URL, default to 'json'
+    output_format = request.args.get('format', 'json').lower()
+    
+    if output_format == 'xml':
+        # Convert dictionary to XML
+        xml_data = dicttoxml(data, custom_root='response', attr_type=False)
+        response = make_response(xml_data)
+        # Set proper content type header for XML
+        response.headers['Content-Type'] = 'application/xml'
+        return response, status_code
+    else:
+        # Default: return JSON
+        return jsonify(data), status_code
+    
 
-# Health check endpoint - tests if the API is running
-@app.route('/api/health', methods=['GET'])
-def health_check():
-    return {'status': 'healthy'}, 200
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+
