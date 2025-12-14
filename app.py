@@ -242,8 +242,50 @@ def get_hero(hero_id):
     except Exception as e:
         return format_response({'error': str(e)}, 500)
     
-
-
+#UPDATE HERO BY ID
+@app.route('/api/heroes/<int:hero_id>', methods=['PUT'])
+@token_required
+def update_hero(hero_id):
+    """Update a hero"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return format_response({'error': 'No data provided'}, 400)
+        
+        cur = mysql.connection.cursor()
+        
+        # Check if hero exists
+        cur.execute("SELECT * FROM heroes WHERE idHEROES = %s", (hero_id,))
+        if not cur.fetchone():
+            cur.close()
+            return format_response({'error': 'Hero not found'}, 404)
+        
+        query = """
+            UPDATE heroes 
+            SET hero_name = %s, origin = %s, difficulty = %s, 
+                ROLES_idROLES = %s, HERO_STATS_idHERO_STATS = %s, 
+                SPECIALTY_idSPECIALTY = %s 
+            WHERE idHEROES = %s
+        """
+        
+        cur.execute(query, (
+            data.get('hero_name'),
+            data.get('origin'),
+            data.get('difficulty'),
+            data.get('role_id'),
+            data.get('hero_stats_id'),
+            data.get('specialty_id'),
+            hero_id
+        ))
+        
+        mysql.connection.commit()
+        cur.close()
+        
+        return format_response({'message': 'Hero updated successfully'})
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)
 
 
 
