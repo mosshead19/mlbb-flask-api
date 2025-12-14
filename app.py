@@ -356,9 +356,56 @@ def search_heroes():
         return format_response({'error': str(e)}, 500)   
     
 
+############################ ROLES CRUD ############################
+
+#GET ALL ROLES
+@app.route('/api/roles', methods=['GET'])
+@token_required
+def get_roles():
+    """Get all roles"""
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM roles")
+        roles = cur.fetchall()
+        cur.close()
+        
+        return format_response({
+            'roles': roles,
+            'count': len(roles)
+        })
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)
 
 
-    
+#GET HEROES BY ROLE ID
+@app.route('/api/roles/<int:role_id>/heroes', methods=['GET'])
+@token_required
+def get_heroes_by_role(role_id):
+    """Get all heroes with a specific role"""
+    try:
+        cur = mysql.connection.cursor()
+        
+        query = """
+            SELECT h.idHEROES, h.hero_name, h.origin, h.difficulty, r.role_name
+            FROM heroes h
+            JOIN roles r ON h.ROLES_idROLES = r.idROLES
+            WHERE r.idROLES = %s
+        """
+        
+        cur.execute(query, (role_id,))
+        heroes = cur.fetchall()
+        cur.close()
+        
+        return format_response({
+            'heroes': heroes,
+            'count': len(heroes)
+        })
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)
+
+
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
