@@ -287,7 +287,30 @@ def update_hero(hero_id):
     except Exception as e:
         return format_response({'error': str(e)}, 500)
 
-
+#DELETE HERO BY ID
+@app.route('/api/heroes/<int:hero_id>', methods=['DELETE'])
+@token_required
+def delete_hero(hero_id):
+    """Delete a hero"""
+    try:
+        cur = mysql.connection.cursor()
+        
+        # Check if hero exists
+        cur.execute("SELECT * FROM heroes WHERE idHEROES = %s", (hero_id,))
+        if not cur.fetchone():
+            cur.close()
+            return format_response({'error': 'Hero not found'}, 404)
+        
+        cur.execute("DELETE FROM heroes WHERE idHEROES = %s", (hero_id,))
+        mysql.connection.commit()
+        cur.close()
+        
+        return format_response({'message': 'Hero deleted successfully'})
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)
+    
+    
 
 @app.route('/api/health', methods=['GET'])
 def health_check():
