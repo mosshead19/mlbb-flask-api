@@ -309,7 +309,55 @@ def delete_hero(hero_id):
         
     except Exception as e:
         return format_response({'error': str(e)}, 500)
+
+
+
+#####SEARCH HEROES BY NAME, ORIGIN, DIFFICULTY
+@app.route('/api/heroes/search', methods=['GET'])
+@token_required
+def search_heroes():
+    """Search heroes by name, origin, or difficulty"""
+    try:
+        search_term = request.args.get('q', '')
+        
+        if not search_term:
+            return format_response({'error': 'Search term required'}, 400)
+        
+        cur = mysql.connection.cursor()
+        
+        query = """
+            SELECT 
+                h.idHEROES,
+                h.hero_name,
+                h.origin,
+                h.difficulty,
+                r.role_name,
+                s.specialty_name
+            FROM heroes h
+            LEFT JOIN roles r ON h.ROLES_idROLES = r.idROLES
+            LEFT JOIN specialty s ON h.SPECIALTY_idSPECIALTY = s.idSPECIALTY
+            WHERE h.hero_name LIKE %s 
+               OR h.origin LIKE %s 
+               OR h.difficulty LIKE %s
+        """
+        
+        search_pattern = f'%{search_term}%'
+        cur.execute(query, (search_pattern, search_pattern, search_pattern))
+        
+        heroes = cur.fetchall()
+        cur.close()
+        
+        return format_response({
+            'heroes': heroes,
+            'count': len(heroes)
+        })
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)   
     
+
+
+
     
 
 @app.route('/api/health', methods=['GET'])
