@@ -465,6 +465,28 @@ def get_hero_stats(stats_id):
     except Exception as e:
         return format_response({'error': str(e)}, 500)
 
+
+
+# ==================== SPECIALTY CRUD ====================
+
+@app.route('/api/specialties', methods=['GET'])
+@token_required
+def get_specialties():
+    """Get all specialties"""
+    try:
+        cur = mysql.connection.cursor()
+        cur.execute("SELECT * FROM specialty")
+        specialties = cur.fetchall()
+        cur.close()
+        
+        return format_response({
+            'specialties': specialties,
+            'count': len(specialties)
+        })
+        
+    except Exception as e:
+        return format_response({'error': str(e)}, 500)
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return {'status': 'healthy'}, 200
